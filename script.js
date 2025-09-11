@@ -30,6 +30,8 @@ async function sendMessage() {
             body: JSON.stringify({ message: text })
         });
 
+        if (!response.ok) throw new Error("Lỗi API chat");
+
         const data = await response.json();
         const replyText = data.reply || "Xin lỗi, tôi không hiểu.";
 
@@ -46,7 +48,9 @@ async function sendMessage() {
             const audioBlob = await audioResponse.blob();
             const audioUrl = URL.createObjectURL(audioBlob);
             const audio = new Audio(audioUrl);
-            audio.play();
+            audio.play().catch(err => console.error("Không phát được audio:", err));
+        } else {
+            console.warn("Backend không trả về audio hợp lệ.");
         }
 
     } catch (err) {
@@ -59,8 +63,9 @@ async function sendMessage() {
 sendBtn.addEventListener("click", sendMessage);
 
 // ====== Gửi tin nhắn khi nhấn Enter ======
-userInput.addEventListener("keypress", (e) => {
+userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
+        e.preventDefault(); // chặn xuống dòng
         sendMessage();
     }
 });
