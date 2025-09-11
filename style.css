@@ -1,0 +1,100 @@
+/* ====== Reset & Layout ====== */
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ====== Chatbox ====== */
+#chatbox {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ddd;
+}
+
+#chatbox .user {
+    background: #e1ffc7;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    align-self: flex-end;
+    text-align: right;
+}
+
+#chatbox .bot {
+    background: #f0f0f0;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    align-self: flex-start;
+    text-align: left;
+}
+
+/* ====== Input area ====== */
+.input-area {
+    display: flex;
+    border-top: 1px solid #ddd;
+}
+
+#userInput {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    font-size: 15px;
+    outline: none;
+}
+
+button {
+    border: none;
+    padding: 12px 15px;
+    cursor: pointer;
+    font-size: 16px;
+    background: #007bff;
+    color: white;
+    transition: background 0.2s ease;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+/* ====== Mic button ====== */
+#micBtn {
+    background: #28a745;
+    border-top-right-radius: 12px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#micBtn:hover {
+    background: #1e7e34;
+}
+
+/* Trạng thái đang nghe */
+#micBtn.listening {
+    background: #dc3545;
+    animation: pulse 1s infinite;
+    transform: scale(1.1);
+}
+
+/* Hiệu ứng nháy đỏ */
+@keyframes pulse {
+    0%   { box-shadow: 0 0 5px #dc3545; }
+    50%  { box-shadow: 0 0 20px #dc3545; }
+    100% { box-shadow: 0 0 5px #dc3545; }
+}
