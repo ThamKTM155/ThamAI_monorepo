@@ -1,108 +1,151 @@
-/* Reset cơ bản */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
-}
+/* Reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* Toàn trang */
 body {
-    background: linear-gradient(135deg, #74ABE2, #5563DE);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #f2f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  transition: background 0.3s, color 0.3s;
 }
 
-/* Khung chính */
 .container {
-    width: 420px;
-    height: 600px;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  width: 420px;
+  max-width: 95%;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 /* Chatbox */
 #chatbox {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-    background: #f7f7f7;
-    scroll-behavior: smooth;
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: #f9fafb;
+  transition: background 0.3s;
 }
 
-/* Thanh nhập tin nhắn */
+.message {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.message.user { justify-content: flex-end; }
+.message.bot { justify-content: flex-start; }
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin: 0 8px;
+}
+
+.bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.user .bubble {
+  background: #0078ff;
+  color: white;
+  border-bottom-right-radius: 5px;
+}
+
+.bot .bubble {
+  background: #e5e7eb;
+  color: black;
+  border-bottom-left-radius: 5px;
+}
+
+/* Controls */
+.controls {
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  background: #fff;
+  transition: background 0.3s;
+}
+
+#voiceSelect {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
 .input-area {
-    display: flex;
-    border-top: 1px solid #ddd;
-    background: #fafafa;
-    padding: 10px;
+  display: flex;
+  gap: 6px;
 }
 
-/* Ô nhập text */
 #userInput {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 20px;
-    background: #f0f0f0;
-    outline: none;
-    font-size: 15px;
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
-/* Nút gửi & mic */
-#sendBtn, #micBtn {
-    margin-left: 8px;
-    padding: 10px 14px;
-    border: none;
-    border-radius: 50%;
-    background: #5563DE;
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-#sendBtn:hover, #micBtn:hover {
-    background: #3947c7;
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
 }
 
-/* Tin nhắn user */
-.user {
-    background: #5563DE;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 16px 16px 0 16px;
-    margin: 6px 0;
-    max-width: 80%;
-    align-self: flex-end;
-    word-wrap: break-word;
+#sendBtn { background: #0078ff; color: #fff; }
+#micBtn { background: #ef4444; color: #fff; }
+#darkModeBtn { background: #6b7280; color: #fff; margin-top: 8px; width: 100%; }
+
+#micBtn.listening {
+  background: #10b981;
+  animation: pulse 1s infinite;
 }
 
-/* Tin nhắn bot */
-.bot {
-    background: #e5e5ea;
-    color: #000;
-    padding: 10px 14px;
-    border-radius: 16px 16px 16px 0;
-    margin: 6px 0;
-    max-width: 80%;
-    align-self: flex-start;
-    word-wrap: break-word;
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
-/* Hiệu ứng cuộn mềm mại */
-#chatbox::-webkit-scrollbar {
-    width: 6px;
+/* 🌙 Dark Mode */
+body.dark {
+  background: #111827;
+  color: #f9fafb;
 }
-#chatbox::-webkit-scrollbar-thumb {
-    background: #bbb;
-    border-radius: 3px;
+
+body.dark .container {
+  background: #1f2937;
+  color: #f9fafb;
 }
-#chatbox::-webkit-scrollbar-track {
-    background: transparent;
+
+body.dark #chatbox {
+  background: #111827;
+}
+
+body.dark .bot .bubble {
+  background: #374151;
+  color: #f9fafb;
+}
+
+body.dark .controls {
+  background: #1f2937;
+  border-top: 1px solid #374151;
+}
+
+body.dark #userInput {
+  background: #374151;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
 }
