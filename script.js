@@ -1,100 +1,87 @@
-// ====== Cấu hình ======
-const API_BASE = "https://thamai-monorepo-backend.onrender.com"; // backend Render
+// Hàm cho bot đọc thành tiếng (TTS)
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "vi-VN";  // ngôn ngữ tiếng Việt
+    utterance.rate = 1;        // tốc độ đọc (0.1 - 10)
+    utterance.pitch = 1;       // cao độ giọng (0 - 2)
+    speechSynthesis.speak(utterance);
+}
 
-const chatbox = document.getElementById("chatbox");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const micBtn = document.getElementById("micBtn");
+// Hàm hiển thị tin nhắn lên chatbox
+function displayMessage(message, sender) {
+    const chatbox = document.getElementById("chatbox");
+    const msgDiv = document.createElement("div");
+    msgDiv.className = sender; // "user" hoặc "bot"
+    msgDiv.textContent = message;
+    chatbox.appendChild(msgDiv);
 
-// ====== Hàm thêm tin nhắn vào khung chat ======
-function addMessage(sender, text) {
-    const msg = document.createElement("div");
-    msg.className = sender;
-    msg.textContent = text;
-    chatbox.appendChild(msg);
+    // Nếu bot trả lời thì đọc thành tiếng
+    if (sender === "bot") {
+        speak(message);
+    }
+
+    // Tự động cuộn xuống cuối
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-// ====== Gửi tin nhắn văn bản ======
+// Gửi tin nhắn text tới backend
 async function sendMessage() {
-    const text = userInput.value.trim();
-    if (!text) return;
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+    if (!message) return;
 
-    addMessage("user", "🧑 " + text);
-    userInput.value = "";
+    displayMessage(message, "user");
+    input.value = "";
 
     try {
-        const response = await fetch(`${API_BASE}/chat`, {
+        const response = await fetch("http://127.0.0.1:5000/chat", { // thay URL backend nếu deploy
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text })
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message })
         });
-
-        if (!response.ok) throw new Error("Lỗi API chat");
 
         const data = await response.json();
-        const replyText = data.reply || "Xin lỗi, tôi không hiểu.";
+        displayMessage(data.reply, "bot");
 
-        addMessage("bot", "🤖 " + replyText);
-
-        // Phát âm thanh trả lời
-        const audioResponse = await fetch(`${API_BASE}/tts`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: replyText })
-        });
-
-        if (audioResponse.ok) {
-            const audioBlob = await audioResponse.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.play().catch(err => console.error("Không phát được audio:", err));
-        } else {
-            console.warn("Backend không trả về audio hợp lệ.");
-        }
-
-    } catch (err) {
-        console.error("Lỗi:", err);
-        addMessage("bot", "⚠️ Lỗi kết nối tới server.");
+    } catch (error) {
+        displayMessage("❌ Lỗi kết nối server!", "bot");
     }
 }
 
-// ====== Gửi tin nhắn khi bấm nút ======
-sendBtn.addEventListener("click", sendMessage);
+// Nhấn nút gửi ➤
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
-// ====== Gửi tin nhắn khi nhấn Enter ======
-userInput.addEventListener("keydown", (e) => {
+// Gõ Enter để gửi
+document.getElementById("userInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
-        e.preventDefault(); // chặn xuống dòng
         sendMessage();
     }
 });
 
-// ====== Nhận diện giọng nói ======
+// Nhận diện giọng nói (Speech Recognition)
 let recognition;
 if ("webkitSpeechRecognition" in window) {
     recognition = new webkitSpeechRecognition();
-    recognition.lang = "vi-VN"; // hỗ trợ tiếng Việt
+    recognition.lang = "vi-VN";
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onstart = () => {
-        micBtn.classList.add("listening"); // đổi màu khi đang nghe
-    };
-
-    recognition.onend = () => {
-        micBtn.classList.remove("listening");
-    };
-
-    recognition.onresult = (event) => {
+    recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
-        userInput.value = transcript;
+        document.getElementById("userInput").value = transcript;
         sendMessage();
     };
+
+    recognition.onerror = function(event) {
+        displayMessage("❌ Lỗi micro: " + event.error, "bot");
+    };
 } else {
-    console.warn("Trình duyệt không hỗ trợ SpeechRecognition.");
+    alert("Trình duyệt của bạn không hỗ trợ Speech Recognition!");
 }
 
-micBtn.addEventListener("click", () => {
+// Nút 🎤 để bắt đầu nghe
+document.getElementById("micBtn").addEventListener("click", function() {
     if (recognition) recognition.start();
 });
