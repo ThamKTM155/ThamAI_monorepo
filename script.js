@@ -1,117 +1,94 @@
-const chatbox = document.getElementById("chatbox");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const micBtn = document.getElementById("micBtn");
-const voiceSelect = document.getElementById("voiceSelect");
-const darkModeBtn = document.getElementById("darkModeBtn");
+let debugMode = false;
 
-let voices = [];
-
-// Load voices
-function populateVoices() {
-  voices = speechSynthesis.getVoices();
-  voiceSelect.innerHTML = "";
-  voices.forEach((v, i) => {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = `${v.name} (${v.lang})`;
-    voiceSelect.appendChild(option);
-  });
-}
-speechSynthesis.onvoiceschanged = populateVoices;
-
-// Append message
-function appendMessage(text, sender = "bot") {
-  const message = document.createElement("div");
-  message.classList.add("message", sender);
-
-  const avatar = document.createElement("img");
-  avatar.classList.add("avatar");
-  avatar.src = sender === "user"
-    ? "https://i.ibb.co/Y8m6VYj/user.png"
-    : "https://i.ibb.co/3FqVzMT/bot.png";
-
-  const bubble = document.createElement("div");
-  bubble.classList.add("bubble");
-  bubble.textContent = text;
-
-  if (sender === "user") {
-    message.appendChild(bubble);
-    message.appendChild(avatar);
-  } else {
-    message.appendChild(avatar);
-    message.appendChild(bubble);
-  }
-
-  chatbox.appendChild(message);
-  chatbox.scrollTop = chatbox.scrollHeight;
-}
-
-// Send message
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-  appendMessage(text, "user");
-  userInput.value = "";
-
-  try {
-    const response = await fetch("https://thamai-backend-clean-1-h88m.onrender.com/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
-    const data = await response.json();
-    const reply = data.reply || "Xin lỗi, tôi chưa có phản hồi.";
-    appendMessage(reply, "bot");
-    speak(reply);
-  } catch (err) {
-    console.error(err);
-    appendMessage("❌ Lỗi kết nối server!", "bot");
-  }
-}
-
-// Text-to-Speech
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  const selected = voiceSelect.value;
-  if (voices[selected]) utterance.voice = voices[selected];
-  speechSynthesis.speak(utterance);
-}
-
-// Speech-to-Text
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SpeechRecognition) {
-  const recognition = new SpeechRecognition();
-  recognition.lang = "vi-VN";
-  recognition.interimResults = false;
-
-  micBtn.addEventListener("click", () => {
-    if (micBtn.classList.contains("listening")) {
-      recognition.stop();
-      micBtn.classList.remove("listening");
-    } else {
-      recognition.start();
-      micBtn.classList.add("listening");
+// Thêm log vào panel hoặc console
+function debugLog(...args) {
+    if (debugMode) {
+        const panel = document.getElementById("debugPanel");
+        const msg = args.map(a => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ");
+        panel.innerHTML += `<div>> ${msg}</div>`;
+        panel.scrollTop = panel.scrollHeight;
     }
-  });
-
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    userInput.value = transcript;
-    sendMessage();
-  };
-
-  recognition.onend = () => {
-    micBtn.classList.remove("listening");
-  };
+    console.log(...args);
 }
 
-// Events
-sendBtn.addEventListener("click", sendMessage);
-userInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
+// Gửi tin nhắn tới backend
+async function sendMessage(message) {
+    if (!message.trim()) return;
+
+    appendMessage("user", message);
+
+    try {
+        const response = await fetch("https://thamai-monorepo-backend.onrender.com/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
+
+        if (!response.ok) {
+            debugLog(`❌ Backend HTTP error: ${response.status} ${response.statusText}`);
+            appendMessage("bot", `⚠️ Lỗi backend: ${response.statusText} (mã ${response.status})`);
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            debugLog("🔥 Backend error:", data.error);
+            appendMessage("bot", `⚠️ Lỗi từ backend: ${data.error}`);
+            return;
+        }
+
+        appendMessage("bot", data.reply);
+
+    } catch (err) {
+        debugLog("💥 Fetch failed:", err);
+        appendMessage("bot", "⚠️ Không kết nối được với server.");
+    }
+}
+
+// Thêm tin nhắn với avatar
+function appendMessage(sender, text) {
+    const chatbox = document.getElementById("chatbox");
+    const messageEl = document.createElement("div");
+    messageEl.classList.add("message", sender);
+
+    const avatar = document.createElement("img");
+    avatar.src = sender === "user" ? "user.png" : "bot.png";
+    avatar.classList.add("avatar");
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble");
+    bubble.textContent = text;
+
+    messageEl.appendChild(avatar);
+    messageEl.appendChild(bubble);
+    chatbox.appendChild(messageEl);
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+// Sự kiện gửi tin nhắn
+document.getElementById("sendBtn").addEventListener("click", () => {
+    const input = document.getElementById("userInput");
+    sendMessage(input.value);
+    input.value = "";
 });
-darkModeBtn.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
+
+document.getElementById("userInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+        const input = document.getElementById("userInput");
+        sendMessage(input.value);
+        input.value = "";
+    }
+});
+
+// Sự kiện bật/tắt Debug
+document.getElementById("debugBtn").addEventListener("click", () => {
+    debugMode = !debugMode;
+    const panel = document.getElementById("debugPanel");
+    panel.style.display = debugMode ? "block" : "none";
+    if (debugMode) {
+        debugLog("🐞 Debug mode enabled");
+    } else {
+        console.clear();
+    }
 });
