@@ -1,5 +1,5 @@
 /* --------------- CONFIG --------------- */
-const API_CHAT = "https://thamai-monorepo-backend.onrender.com/chat"; // change if needed
+const API_CHAT = "https://thamai-monorepo-backend-1.onrender.com/chat"; // change if needed
 const AVATAR_USER = "user.png"; 
 const AVATAR_BOT  = "bot.png";
 const AUTO_MIC_AFTER_TTS = true; // bot nói xong -> tự bật mic (nếu muốn)
