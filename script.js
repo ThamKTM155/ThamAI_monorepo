@@ -1,6 +1,6 @@
 /* --------------- CONFIG --------------- */
 const API_CHAT = "https://thamai-monorepo-backend.onrender.com/chat"; // change if needed
-const AVATAR_USER = "user.png"; // local file or URL (ensure correct name)
+const AVATAR_USER = "user.png"; 
 const AVATAR_BOT  = "bot.png";
 const AUTO_MIC_AFTER_TTS = true; // bot nói xong -> tự bật mic (nếu muốn)
 
@@ -113,8 +113,7 @@ function speakText(text){
   if(muteTTS) { dbg("TTS muted — skip speak"); return Promise.resolve(); }
   if(!("speechSynthesis" in window)) { dbg("No speechSynthesis"); return Promise.resolve(); }
 
-  // stop recognition to avoid capturing TTS
-  stopRecognition();
+  stopRecognition(); // tránh micro thu âm TTS
 
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
@@ -125,7 +124,6 @@ function speakText(text){
     u.onend = () => {
       dbg("TTS ended");
       if(AUTO_MIC_AFTER_TTS && !muteTTS){
-        // resume mic if previously was active (we just auto-start)
         startRecognitionSafe();
       }
       resolve();
@@ -135,7 +133,7 @@ function speakText(text){
   });
 }
 
-/* --------------- SPEECH RECOGNITION (single instance) --------------- */
+/* --------------- SPEECH RECOGNITION --------------- */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if(SpeechRecognition){
   recognition = new SpeechRecognition();
@@ -151,33 +149,27 @@ if(SpeechRecognition){
   recognition.onresult = (ev) => {
     const transcript = ev.results[0][0].transcript.trim();
     dbg("STT result:", transcript);
-
-    // ignore duplicates / too short
-    if(!transcript || transcript.length < 1) { dbg("Ignored short transcript"); return; }
-    if(transcript === lastTranscript){ dbg("Ignored duplicate transcript"); return; }
+    if(!transcript || transcript.length < 1) return;
+    if(transcript === lastTranscript) return;
     lastTranscript = transcript;
-
-    // show transcript in input and send message
     userInput.value = transcript;
     sendMessage();
   };
 }
 
-/* Safe start/stop recognition helpers */
 function startRecognitionSafe(){
   if(!recognition) return;
-  if(isRecognizing) { dbg("Recognition already running"); return; }
+  if(isRecognizing) return;
   try { recognition.start(); }
   catch(e){ dbg("recognition.start exception:", e); }
 }
 function stopRecognition(){
   if(!recognition) return;
-  try {
-    recognition.stop();
-  } catch(e){ dbg("recognition.stop exception:", e); }
+  try { recognition.stop(); }
+  catch(e){ dbg("recognition.stop exception:", e); }
 }
 
-/* --------------- NETWORK: fetch with retry --------------- */
+/* --------------- NETWORK --------------- */
 async function postJsonWithRetry(url, body, tries = 3){
   let delay = 500;
   for(let i=0;i<tries;i++){
@@ -199,7 +191,6 @@ async function postJsonWithRetry(url, body, tries = 3){
 
 /* --------------- CHAT FLOW --------------- */
 function getHistoryAsArray(){
-  // read current DOM messages into array for saving
   const nodes = chatbox.querySelectorAll(".message");
   const arr = [];
   nodes.forEach(n=>{
@@ -211,66 +202,49 @@ function getHistoryAsArray(){
 }
 
 async function sendMessage(){
-  if(waitingForReply) { dbg("Still waiting for reply — ignore send"); return; }
+  if(waitingForReply) return;
   const text = userInput.value.trim();
   if(!text) return;
 
-  // render user message
   appendMessage("user", text);
   userInput.value = "";
   waitingForReply = true;
 
-  // typing indicator (bot)
-  const typingEl = appendMessage("bot", "", {typing:true});
-  // prepare body
-  const body = { message: text };
+  // typing indicator
+  const typingObj = appendMessage("bot", "", {typing:true});
+  const typingWrap = typingObj.wrap;
 
   try {
-    const res = await postJsonWithRetry(API_CHAT, body, 3);
+    const res = await postJsonWithRetry(API_CHAT, { message: text }, 3);
     if(!res.ok){
-      const statusText = `${res.status} ${res.statusText}`;
-      dbg("HTTP error:", statusText);
-      // read body message if any
-      let errText = `Lỗi server: ${statusText}`;
-      try {
-        const json = await res.json();
-        if(json.error) errText = `Lỗi server: ${json.error}`;
-      } catch(e){}
-      // replace typing
-      typingEl.remove();
+      const errText = `Lỗi server: ${res.status}`;
+      typingWrap.remove();
       appendMessage("bot", errText);
-      dbg("Displayed backend error to user");
       waitingForReply = false;
       return;
     }
 
     const data = await res.json();
     if(data.error){
-      typingEl.remove();
+      typingWrap.remove();
       appendMessage("bot", `Lỗi backend: ${data.error}`);
-      dbg("Backend returned error:", data.error);
       waitingForReply = false;
       return;
     }
 
     const reply = data.reply || "Xin lỗi, Thắm AI chưa hiểu.";
-    // replace typing with real reply
-    typingEl.remove();
+    typingWrap.remove();
     appendMessage("bot", reply);
-
-    // speak (await so mic won't start while speaking)
     await speakText(reply);
 
   } catch(err){
     dbg("sendMessage failure:", err);
-    try { typingEl.remove(); } catch(e){}
+    typingWrap.remove();
     appendMessage("bot", "⚠️ Lỗi kết nối. Vui lòng thử lại.");
   } finally {
     waitingForReply = false;
-    // persist small history automatically
     try {
-      const hist = getHistoryAsArray();
-      saveHistoryToLocal(hist);
+      saveHistoryToLocal(getHistoryAsArray());
     } catch(e){}
   }
 }
@@ -279,70 +253,23 @@ async function sendMessage(){
 sendBtn.addEventListener("click", ()=> sendMessage());
 userInput.addEventListener("keypress", (e)=> { if(e.key === "Enter") sendMessage(); });
 
-micBtn.addEventListener("click", ()=>{
-  if(isRecognizing) stopRecognition();
-  else startRecognitionSafe();
-});
-
+micBtn.addEventListener("click", ()=>{ isRecognizing ? stopRecognition() : startRecognitionSafe(); });
 voiceSelect.addEventListener("change", ()=> { selectedVoiceIdx = parseInt(voiceSelect.value); });
+debugBtn.addEventListener("click", ()=>{ debugMode = !debugMode; debugPanel.style.display = debugMode ? "block":"none"; });
+clearBtn.addEventListener("click", ()=>{ if(confirm("Xác nhận xóa toàn bộ chat?")) { chatbox.innerHTML = ""; localStorage.removeItem(STORAGE_KEY); } });
+saveBtn.addEventListener("click", ()=>{ try { localStorage.setItem(STORAGE_KEY + "_manual", JSON.stringify(getHistoryAsArray())); alert("Saved!"); } catch(e){ alert("Save failed: " + e.message); } });
+loadBtn.addEventListener("click", ()=>{ const raw = localStorage.getItem(STORAGE_KEY + "_manual"); if(!raw){ alert("Không tìm thấy."); return; } try { renderHistory(JSON.parse(raw)); } catch(e){ alert("Load failed: " + e.message); } });
+downloadBtn.addEventListener("click", ()=>{ const arr = getHistoryAsArray(); const txt = arr.map(m => `[${m.sender}] ${m.text}`).join("\n"); const blob = new Blob([txt], {type:"text/plain;charset=utf-8"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "thamai_transcript.txt"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+muteBtn.addEventListener("click", ()=>{ muteTTS = !muteTTS; muteBtn.textContent = muteTTS ? "🔇" : "🔈"; });
+darkModeBtn.addEventListener("click", ()=>{ document.body.classList.toggle("dark"); });
 
-debugBtn.addEventListener("click", ()=>{
-  debugMode = !debugMode;
-  debugPanel.style.display = debugMode ? "block":"none";
-  debugPanel.setAttribute("aria-hidden", !debugMode);
-  if(debugMode) dbg("🐞 Debug ON");
-});
-
-clearBtn.addEventListener("click", ()=>{
-  if(confirm("Xác nhận xóa toàn bộ chat?")) {
-    chatbox.innerHTML = "";
-    localStorage.removeItem(STORAGE_KEY);
-  }
-});
-saveBtn.addEventListener("click", ()=>{
-  const hist = getHistoryAsArray();
-  try {
-    localStorage.setItem(STORAGE_KEY + "_manual", JSON.stringify(hist));
-    alert("Saved conversation into localStorage (manual)");
-  } catch(e){ alert("Save failed: " + e.message); }
-});
-loadBtn.addEventListener("click", ()=>{
-  const raw = localStorage.getItem(STORAGE_KEY + "_manual");
-  if(!raw){ alert("Không tìm thấy saved conversation."); return; }
-  try {
-    const arr = JSON.parse(raw);
-    chatbox.innerHTML = "";
-    arr.forEach(m => appendMessage(m.sender, m.text));
-  } catch(e){ alert("Load failed: " + e.message); }
-});
-downloadBtn.addEventListener("click", ()=>{
-  const arr = getHistoryAsArray();
-  const txt = arr.map(m => `[${m.sender}] ${m.text}`).join("\n");
-  const blob = new Blob([txt], {type:"text/plain;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "thamai_transcript.txt"; document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-});
-
-muteBtn.addEventListener("click", ()=>{
-  muteTTS = !muteTTS;
-  muteBtn.textContent = muteTTS ? "🔇" : "🔈";
-});
-
-darkModeBtn.addEventListener("click", ()=>{
-  document.body.classList.toggle("dark");
-});
-
-/* --------------- INITIALIZE UI from local storage --------------- */
+/* --------------- INIT --------------- */
 (function init(){
-  // voice list
   populateVoices();
-  // load auto history
   const saved = loadHistoryFromLocal();
   if(saved && Array.isArray(saved) && saved.length){
     renderHistory(saved);
   } else {
-    appendMessage("bot", "Xin chào! Tôi là Thắm AI. Bạn cần giúp gì?"); // starter
+    appendMessage("bot", "Xin chào! Tôi là Thắm AI. Bạn cần giúp gì?");
   }
 })();
