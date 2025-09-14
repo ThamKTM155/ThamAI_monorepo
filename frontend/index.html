@@ -1,48 +1,49 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Thắm AI — Trợ lý cục bộ</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThamAI Chat</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <div class="title">Thắm AI</div>
-      <div class="header-actions">
-        <button id="darkModeBtn" title="Chuyển Dark/Light">🌙</button>
-        <button id="muteBtn" title="Tắt/ bật âm">🔈</button>
-      </div>
-    </header>
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <img src="./bot.png" alt="Bot" class="bot-avatar">
+      <h2>ThamAI Chat</h2>
+    </div>
 
-    <main id="chatbox" aria-live="polite"></main>
+    <!-- Chat Box -->
+    <div id="chatbox" class="chat-box"></div>
 
-    <!-- Debug panel (ẩn theo mặc định) -->
-    <div id="debugPanel" class="debug-panel" aria-hidden="true"></div>
+    <!-- Input -->
+    <div class="chat-input">
+      <input id="userInput" type="text" placeholder="Nhập tin nhắn..." />
+      <button id="sendBtn">Gửi</button>
+      <button id="micBtn">🎤</button>
+    </div>
 
-    <section class="controls">
-      <div class="top-controls">
-        <select id="voiceSelect" title="Chọn giọng"></select>
-        <button id="debugBtn" title="Bật/tắt Debug">🐞 Debug</button>
-      </div>
+    <!-- Control Panel -->
+    <div class="controls">
+      <label for="voiceSelect">Giọng đọc:</label>
+      <select id="voiceSelect"></select>
+      <button id="smileBtn">😄 Cười</button>
+      <button id="speakBtn">🗣️ Nói</button>
+      <button id="listenBtn">👂 Nghe</button>
+      <button id="muteBtn">🔈</button>
+      <button id="darkModeBtn">🌙</button>
+      <button id="clearBtn">🗑️ Xóa</button>
+      <button id="saveBtn">💾 Lưu</button>
+      <button id="loadBtn">📂 Nạp</button>
+      <button id="downloadBtn">⬇️ Tải TXT</button>
+      <button id="debugBtn">🐞 Debug</button>
+    </div>
 
-      <div class="input-row">
-        <input id="userInput" placeholder="Nhập tin nhắn hoặc bấm 🎤 để nói..." autocomplete="off"/>
-        <button id="sendBtn" title="Gửi (Enter)">➤</button>
-        <button id="micBtn" title="Mic">🎤</button>
-      </div>
-
-      <div class="bottom-controls">
-        <button id="clearBtn">🗑️ Clear</button>
-        <button id="saveBtn">💾 Save</button>
-        <button id="loadBtn">📂 Load</button>
-        <button id="downloadBtn">⬇️ Download</button>
-      </div>
-    </section>
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="debug-panel" style="display:none"></div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
