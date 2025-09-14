@@ -1,0 +1,16 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore environment variables
+.env
+
+# Ignore audio/video test files
+*.mp3
+*.wav
+*.png
+*.jpg
+
+# Ignore system files
+.DS_Store
+Thumbs.db
