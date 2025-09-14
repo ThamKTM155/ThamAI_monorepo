@@ -1,3 +1,7 @@
+/* ========== CONFIG ========== */
+const API_CHAT = "https://thamai-monorepo-backend.onrender.com/chat";
+
+/* ========== DOM ELEMENTS ========== */
 const chatbox = document.getElementById("chatbox");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -15,12 +19,13 @@ const debugBtn = document.getElementById("debugBtn");
 const debugPanel = document.getElementById("debugPanel");
 const voiceSelect = document.getElementById("voiceSelect");
 
+/* ========== STATE ========== */
 let recognition;
 let synth = window.speechSynthesis;
 let voices = [];
 let isMuted = false;
 
-// ========== Chat UI ==========
+/* ========== CHAT UI ========== */
 function addMessage(sender, text) {
   const msgDiv = document.createElement("div");
   msgDiv.className = `message ${sender}`;
@@ -29,12 +34,12 @@ function addMessage(sender, text) {
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-// ========== Speech ==========
+/* ========== SPEECH SYNTHESIS (TTS) ========== */
 function populateVoices() {
   voices = synth.getVoices();
   voiceSelect.innerHTML = "";
   voices.forEach((voice, i) => {
-    let option = document.createElement("option");
+    const option = document.createElement("option");
     option.value = i;
     option.textContent = `${voice.name} (${voice.lang})`;
     voiceSelect.appendChild(option);
@@ -53,17 +58,19 @@ function speak(text) {
   synth.speak(utterance);
 }
 
-// ========== Recognition ==========
-if ("webkitSpeechRecognition" in window) {
-  recognition = new webkitSpeechRecognition();
+/* ========== SPEECH RECOGNITION (STT) ========== */
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
   recognition.lang = "vi-VN";
   recognition.continuous = false;
   recognition.interimResults = false;
 
   recognition.onresult = (event) => {
-    const text = event.results[0][0].transcript;
+    const text = event.results[0][0].transcript.trim();
     addMessage("user", text);
-    botReply("Bạn vừa nói: " + text);
+    sendToBackend(text);
   };
 
   recognition.onerror = (event) => {
@@ -75,24 +82,40 @@ function startListening() {
   if (recognition) recognition.start();
 }
 
-// ========== Bot Logic ==========
-function botReply(msg) {
-  addMessage("bot", msg);
-  speak(msg);
+/* ========== BACKEND CALL ========== */
+async function sendToBackend(userText) {
+  try {
+    const response = await fetch(API_CHAT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userText }),
+    });
+    const data = await response.json();
+
+    if (data.reply) {
+      addMessage("bot", data.reply);
+      speak(data.reply);
+    } else {
+      addMessage("bot", "⚠️ Backend không trả lời.");
+    }
+  } catch (err) {
+    addMessage("bot", "❌ Không kết nối được với server.");
+    logDebug("Fetch error: " + err);
+  }
 }
 
-// ========== Event Handlers ==========
+/* ========== EVENT HANDLERS ========== */
 sendBtn.onclick = () => {
   const text = userInput.value.trim();
   if (!text) return;
   addMessage("user", text);
   userInput.value = "";
-  botReply("ThamAI trả lời: " + text);
+  sendToBackend(text);
 };
 
 micBtn.onclick = () => startListening();
 
-smileBtn.onclick = () => botReply("😊 Tôi đang cười với bạn!");
+smileBtn.onclick = () => addMessage("bot", "😊 Tôi đang cười với bạn!");
 
 speakBtn.onclick = () => speak("Xin chào, tôi là ThamAI!");
 
@@ -113,19 +136,19 @@ clearBtn.onclick = () => {
 
 saveBtn.onclick = () => {
   localStorage.setItem("chatHistory", chatbox.innerHTML);
-  botReply("💾 Đã lưu hội thoại!");
+  addMessage("bot", "💾 Đã lưu hội thoại!");
 };
 
 loadBtn.onclick = () => {
   chatbox.innerHTML = localStorage.getItem("chatHistory") || "";
-  botReply("📂 Đã nạp hội thoại!");
+  addMessage("bot", "📂 Đã nạp hội thoại!");
 };
 
 downloadBtn.onclick = () => {
-  let text = chatbox.innerText;
-  let blob = new Blob([text], { type: "text/plain" });
-  let url = URL.createObjectURL(blob);
-  let a = document.createElement("a");
+  const text = chatbox.innerText;
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
   a.href = url;
   a.download = "chat.txt";
   a.click();
@@ -136,9 +159,13 @@ debugBtn.onclick = () => {
     debugPanel.style.display === "none" ? "block" : "none";
 };
 
+/* ========== DEBUG HELPER ========== */
 function logDebug(msg) {
   const p = document.createElement("div");
   p.textContent = msg;
   debugPanel.appendChild(p);
   debugPanel.scrollTop = debugPanel.scrollHeight;
 }
+
+/* ========== INIT ========== */
+addMessage("bot", "🤖 Xin chào! Tôi là ThamAI, bạn muốn nói gì nào?");
