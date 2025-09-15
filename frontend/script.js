@@ -1,5 +1,6 @@
 /* ========== CONFIG ========== */
-const API_CHAT = "https://thamai-monorepo-backend.onrender.com/chat";
+// Nếu index.html có định nghĩa sẵn API_CHAT thì dùng, ngược lại fallback localhost
+const API_CHAT = window.API_CHAT || "http://127.0.0.1:5000/chat";
 
 /* ========== DOM ELEMENTS ========== */
 const chatbox = document.getElementById("chatbox");
@@ -90,16 +91,21 @@ async function sendToBackend(userText) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: userText }),
     });
-    const data = await response.json();
 
+    if (!response.ok) throw new Error("Server lỗi: " + response.status);
+
+    const data = await response.json();
     if (data.reply) {
       addMessage("bot", data.reply);
       speak(data.reply);
     } else {
-      addMessage("bot", "⚠️ Backend không trả lời.");
+      addMessage("bot", "⚠️ Backend không trả lời hợp lệ.");
     }
   } catch (err) {
-    addMessage("bot", "❌ Không kết nối được với server.");
+    // fallback: trả lời giả lập khi server down
+    const fallback = "🤖 (Giả lập) Tôi chưa kết nối được server, nhưng tôi vẫn lắng nghe bạn!";
+    addMessage("bot", fallback);
+    speak(fallback);
     logDebug("Fetch error: " + err);
   }
 }

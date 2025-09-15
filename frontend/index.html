@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThamAI Chat</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>ThamAI Assistant</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="chat-container">
     <!-- Header -->
     <div class="chat-header">
-      <img src="./bot.png" alt="Bot" class="bot-avatar">
-      <h2>ThamAI Chat</h2>
+      <img src="bot.png" alt="Bot" class="bot-avatar" />
+      <h2>ThamAI Assistant</h2>
     </div>
 
     <!-- Chat Box -->
@@ -28,15 +28,17 @@
     <div class="controls">
       <label for="voiceSelect">Giọng đọc:</label>
       <select id="voiceSelect"></select>
+      
       <button id="smileBtn">😄 Cười</button>
       <button id="speakBtn">🗣️ Nói</button>
       <button id="listenBtn">👂 Nghe</button>
+
       <button id="muteBtn">🔈</button>
       <button id="darkModeBtn">🌙</button>
       <button id="clearBtn">🗑️ Xóa</button>
       <button id="saveBtn">💾 Lưu</button>
       <button id="loadBtn">📂 Nạp</button>
-      <button id="downloadBtn">⬇️ Tải TXT</button>
+      <button id="downloadBtn">⬇️ TXT</button>
       <button id="debugBtn">🐞 Debug</button>
     </div>
 
@@ -44,6 +46,11 @@
     <div id="debugPanel" class="debug-panel" style="display:none"></div>
   </div>
 
-  <script src="./script.js"></script>
+  <!-- Script chính -->
+  <script>
+    // Cấu hình API backend
+    const API_CHAT = "https://thamai-monorepo-backend-1.onrender.com/chat";
+  </script>
+  <script src="script.js"></script>
 </body>
 </html>
