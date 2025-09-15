@@ -1,95 +1,59 @@
-
 import os
-import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 
-# ----------------------------
-# Logging setup
-# ----------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(),                     # log ra console
-        logging.FileHandler("app.log", encoding="utf-8")  # log ra file
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
-# ----------------------------
-# Flask setup
-# ----------------------------
 app = Flask(__name__)
+CORS(app)
 
-# Cho phép tất cả origin (hoặc whitelist nếu muốn an toàn hơn)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Lấy API key từ biến môi trường
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_PROJECT_ID = os.getenv("OPENAI_PROJECT_ID")  # chỉ cần nếu dùng sk-proj
 
-# ----------------------------
-# OpenAI setup
-# ----------------------------
-openai.api_key = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("❌ Chưa có OPENAI_API_KEY trong biến môi trường!")
 
-# ----------------------------
-# Routes
-# thêm import logging nếu chưa có
-import logging
+openai.api_key = OPENAI_API_KEY
 
-# --- ở phần routes, thêm ---
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({
-        "status": "ok",
-        "service": "ThamAI Backend",
-        "openai_key_set": bool(openai.api_key),
-    })
-
-# ----------------------------
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return jsonify({"status": "ok", "message": "ThamAI Backend is running!"})
+    return "✅ ThamAI_monorepo backend is running!"
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
-        if not data or "message" not in data:
-            logger.warning("⚠️ Missing 'message' in request body")
-            return jsonify({"error": "Missing 'message' in request body"}), 400
+        user_message = data.get("message", "").strip()
 
-        user_message = data["message"]
-        logger.info(f"📩 User message: {user_message}")
+        if not user_message:
+            return jsonify({"error": "⚠️ Message trống"}), 400
 
-        if not openai.api_key:
-            logger.error("❌ OPENAI_API_KEY not set in environment")
-            return jsonify({"error": "Server misconfiguration: OPENAI_API_KEY missing"}), 500
+        # Kiểm tra loại API key
+        is_project_key = OPENAI_API_KEY.startswith("sk-proj-")
 
-        # Gọi OpenAI ChatCompletion
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",   # có thể đổi thành gpt-4
-            messages=[
-                {"role": "system", "content": "Bạn là trợ lý AI tên ThamAI, trả lời ngắn gọn, rõ ràng."},
+        params = {
+            "model": "gpt-4o-mini",  # nhẹ và nhanh
+            "messages": [
+                {"role": "system", "content": "Bạn là trợ lý AI tên ThamAI, giúp đỡ người dùng."},
                 {"role": "user", "content": user_message}
             ],
-            max_tokens=300,
-            temperature=0.7,
-        )
+            "temperature": 0.7
+        }
 
-        bot_reply = response["choices"][0]["message"]["content"].strip()
-        logger.info(f"🤖 Bot reply: {bot_reply}")
+        # Nếu là project key thì truyền thêm project ID
+        if is_project_key:
+            if not OPENAI_PROJECT_ID:
+                return jsonify({"error": "⚠️ Dùng sk-proj cần thêm OPENAI_PROJECT_ID"}), 400
+            response = openai.ChatCompletion.create(**params, project=OPENAI_PROJECT_ID)
+        else:
+            response = openai.ChatCompletion.create(**params)
 
-        return jsonify({"reply": bot_reply})
+        reply = response["choices"][0]["message"]["content"].strip()
+        return jsonify({"reply": reply})
 
     except Exception as e:
-        logger.exception("🔥 Error in /chat endpoint")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"🔥 Error in /chat endpoint: {str(e)}"}), 500
 
 
-# ----------------------------
-# Main
-# ----------------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
