@@ -1,56 +1,42 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThamAI Assistant</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tham AI _monorepo</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Khai báo biến toàn cục để script.js dùng
+    window.API_CHAT = "https://thamai-monorepo-backend-1.onrender.com/chat";
+  </script>
 </head>
 <body>
-  <div class="chat-container">
-    <!-- Header -->
-    <div class="chat-header">
-      <img src="bot.png" alt="Bot" class="bot-avatar" />
-      <h2>ThamAI Assistant</h2>
-    </div>
+  <div class="app-container">
+    <header class="app-header">
+      <h2>Tham AI _monorepo</h2>
+    </header>
 
-    <!-- Chat Box -->
-    <div id="chatbox" class="chat-box"></div>
+    <main class="chat-box" id="chat-box"></main>
 
-    <!-- Input -->
-    <div class="chat-input">
-      <input id="userInput" type="text" placeholder="Nhập tin nhắn..." />
-      <button id="sendBtn">Gửi</button>
-      <button id="micBtn">🎤</button>
-    </div>
+    <footer class="chat-input">
+      <input type="text" id="user-input" placeholder="Nhập tin nhắn..." />
+      <button id="send-btn">Gửi</button>
+    </footer>
 
-    <!-- Control Panel -->
     <div class="controls">
-      <label for="voiceSelect">Giọng đọc:</label>
-      <select id="voiceSelect"></select>
-      
-      <button id="smileBtn">😄 Cười</button>
-      <button id="speakBtn">🗣️ Nói</button>
-      <button id="listenBtn">👂 Nghe</button>
-
-      <button id="muteBtn">🔈</button>
-      <button id="darkModeBtn">🌙</button>
-      <button id="clearBtn">🗑️ Xóa</button>
-      <button id="saveBtn">💾 Lưu</button>
-      <button id="loadBtn">📂 Nạp</button>
-      <button id="downloadBtn">⬇️ TXT</button>
-      <button id="debugBtn">🐞 Debug</button>
+      <label for="voice">Giọng đọc:</label>
+      <select id="voice">
+        <option value="male">Nam</option>
+        <option value="female">Nữ</option>
+      </select>
+      <button id="laugh-btn">😂 Cười</button>
+      <button id="speak-btn">🗣️ Nói</button>
+      <button id="listen-btn">🎤 Nghe</button>
+      <button id="clear-btn">🗑️ Xóa</button>
+      <button id="save-btn">💾 Lưu</button>
     </div>
-
-    <!-- Debug Panel -->
-    <div id="debugPanel" class="debug-panel" style="display:none"></div>
   </div>
 
-  <!-- Script chính -->
-  <script>
-    // Cấu hình API backend
-    const API_CHAT = "https://thamai-monorepo-backend-1.onrender.com/chat";
-  </script>
   <script src="script.js"></script>
 </body>
 </html>
