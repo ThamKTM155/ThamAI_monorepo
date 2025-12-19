@@ -1,6 +1,6 @@
 // Lấy API endpoint từ index.html
 const API_CHAT = window.API_CHAT || "";
-const API_BASE = "https://thamai-monorepo-backend-1.onrender.com";
+const API_BASE = "https://thamai-backend-new.onrender.com";
 // Các phần tử DOM
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
